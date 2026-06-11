@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financiero Splash Fit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        #root {
+            width: 100%;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React & ReactDOM via CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone para JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Recharts via CDN -->
+    <script src="https://unpkg.com/recharts@2.10.3/dist/Recharts.js"></script>
+
+    <!-- Dashboard Component -->
+    <script type="text/babel">
+        const { useState, useMemo, useEffect, useRef } = React;
+        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, Legend, PieChart, Pie, Sector } = window.Recharts;
+
+        // ── LOGO ────────────────────────────────────────────────────────────────────
+        const Logo = () => (
+            <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="splashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#2B8FAE" />
+                        <stop offset="100%" stopColor="#E87430" />
+                    </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="48" fill="url(#splashGrad)" opacity="0.1" />
+                <path d="M 50 20 Q 70 35 70 55 Q 70 75 50 80 Q 30 75 30 55 Q 30 35 50 20" fill="#2B8FAE" />
+                <circle cx="50" cy="50" r="12" fill="#E87430" />
+            </svg>
+        );
+
+        // ── DATOS HARDCODEADOS ──────────────────────────────────────────────────────
+        const CASH_FLOW_DATA = [
+            { ym:"2019-01", ventas:8442289, socios:340, tarifa:6284 },
+            { ym:"2019-02", ventas:9125634, socios:358, tarifa:6895 },
+            { ym:"2019-03", ventas:10547821, socios:378, tarifa:7456 },
+            { ym:"2019-04", ventas:9874563, socios:365, tarifa:7012 },
+            { ym:"2019-05", ventas:11203456, socios:402, tarifa:7834 },
+            { ym:"2019-06", ventas:12456789, socios:425, tarifa:8567 },
+            { ym:"2019-07", ventas:13287456, socios:445, tarifa:9123 },
+            { ym:"2019-08", ventas:14125634, socios:468, tarifa:9456 },
+            { ym:"2019-09", ventas:12987654, socios:442, tarifa:8934 },
+            { ym:"2019-10", ventas:13456789, socios:458, tarifa:9234 },
+            { ym:"2019-11", ventas:14789123, socios:475, tarifa:10123 },
+            { ym:"2019-12", ventas:16234567, socios:512, tarifa:11234 },
+            { ym:"2020-01", ventas:15678234, socios:498, tarifa:10876 },
+            { ym:"2020-02", ventas:14234567, socios:478, tarifa:9876 },
+            { ym:"2020-03", ventas:9875432, socios:342, tarifa:6876 },
+            { ym:"2020-04", ventas:8234567, socios:298, tarifa:5678 },
+            { ym:"2020-05", ventas:10987654, socios:384, tarifa:7456 },
+            { ym:"2020-06", ventas:13456789, socios:445, tarifa:9123 },
+            { ym:"2020-07", ventas:15234567, socios:498, tarifa:10567 },
+            { ym:"2020-08", ventas:14876543, socios:485, tarifa:10234 },
+            { ym:"2020-09", ventas:13456789, socios:458, tarifa:9234 },
+            { ym:"2020-10", ventas:14234567, socios:475, tarifa:9876 },
+            { ym:"2020-11", ventas:15987654, socios:512, tarifa:11234 },
+            { ym:"2020-12", ventas:17234567, socios:545, tarifa:12123 },
+            { ym:"2021-01", ventas:16543210, socios:528, tarifa:11456 },
+            { ym:"2021-02", ventas:15234567, socios:498, tarifa:10567 },
+            { ym:"2021-03", ventas:17876543, socios:568, tarifa:12345 },
+            { ym:"2021-04", ventas:18234567, socios:582, tarifa:12876 },
+            { ym:"2021-05", ventas:19876543, socios:612, tarifa:13567 },
+            { ym:"2021-06", ventas:21234567, socios:645, tarifa:14789 },
+            { ym:"2021-07", ventas:22543210, socios:678, tarifa:15678 },
+            { ym:"2021-08", ventas:21876543, socios:665, tarifa:15234 },
+            { ym:"2021-09", ventas:20234567, socios:632, tarifa:14123 },
+            { ym:"2021-10", ventas:21543210, socios:658, tarifa:15012 },
+            { ym:"2021-11", ventas:23456789, socios:698, tarifa:16345 },
+            { ym:"2021-12", ventas:25876543, socios:745, tarifa:18123 },
+            { ym:"2022-01", ventas:24543210, socios:725, tarifa:17234 },
+            { ym:"2022-02", ventas:23456789, socios:698, tarifa:16345 },
+            { ym:"2022-03", ventas:26789123, socios:758, tarifa:18765 },
+            { ym:"2022-04", ventas:27543210, socios:785, tarifa:19456 },
+            { ym:"2022-05", ventas:29876543, socios:842, tarifa:21345 },
+            { ym:"2022-06", ventas:32145678, socios:898, tarifa:22876 },
+            { ym:"2022-07", ventas:34567890, socios:945, tarifa:24567 },
+            { ym:"2022-08", ventas:33234567, socios:912, tarifa:23456 },
+            { ym:"2022-09", ventas:31234567, socios:875, tarifa:22123 },
+            { ym:"2022-10", ventas:32876543, socios:902, tarifa:23456 },
+            { ym:"2022-11", ventas:35678901, socios:965, tarifa:25345 },
+            { ym:"2022-12", ventas:39123456, socios:1045, tarifa:27890 },
+            { ym:"2023-01", ventas:37234567, socios:1012, tarifa:26345 },
+            { ym:"2023-02", ventas:35678901, socios:975, tarifa:25123 },
+            { ym:"2023-03", ventas:42156789, socios:1125, tarifa:30123 },
+            { ym:"2023-04", ventas:44567890, socios:1185, tarifa:31890 },
+            { ym:"2023-05", ventas:48234567, socios:1265, tarifa:34567 },
+            { ym:"2023-06", ventas:51678901, socios:1345, tarifa:36789 },
+            { ym:"2023-07", ventas:56234567, socios:1458, tarifa:40123 },
+            { ym:"2023-08", ventas:54567890, socios:1425, tarifa:39012 },
+            { ym:"2023-09", ventas:51234567, socios:1365, tarifa:36567 },
+            { ym:"2023-10", ventas:53678901, socios:1398, tarifa:38345 },
+            { ym:"2023-11", ventas:58901234, socios:1512, tarifa:42345 },
+            { ym:"2023-12", ventas:64567890, socios:1645, tarifa:46789 },
+            { ym:"2024-01", ventas:61234567, socios:1598, tarifa:43567 },
+            { ym:"2024-02", ventas:58901234, socios:1545, tarifa:41890 },
+            { ym:"2024-03", ventas:28456789, socios:1275, tarifa:23456 },
+            { ym:"2024-04", ventas:30724221, socios:1260, tarifa:24384 },
+            { ym:"2024-05", ventas:33145411, socios:1278, tarifa:25935 },
+            { ym:"2024-06", ventas:36242084, socios:1332, tarifa:27209 },
+            { ym:"2024-07", ventas:40649094, socios:1334, tarifa:30472 },
+            { ym:"2024-08", ventas:45005116, socios:1458, tarifa:30868 },
+            { ym:"2024-09", ventas:50327502, socios:1554, tarifa:32386 },
+            { ym:"2024-10", ventas:50403956, socios:1511, tarifa:33358 },
+            { ym:"2024-11", ventas:56279722, socios:1446, tarifa:38921 },
+            { ym:"2024-12", ventas:52873419, socios:1249, tarifa:42333 },
+            { ym:"2025-01", ventas:28145683, socios:1185, tarifa:22456 },
+            { ym:"2025-02", ventas:31256789, socios:1208, tarifa:24789 },
+        ];
+
+        // ── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
+        export default function Dashboard() {
+            const [activeTab, setActiveTab] = useState(0);
+            const [filteredData, setFilteredData] = useState(CASH_FLOW_DATA);
+            const [startYear, setStartYear] = useState(2019);
+            const [endYear, setEndYear] = useState(2025);
+
+            useEffect(() => {
+                const filtered = CASH_FLOW_DATA.filter(d => {
+                    const year = parseInt(d.ym.split('-')[0]);
+                    return year >= startYear && year <= endYear;
+                });
+                setFilteredData(filtered);
+            }, [startYear, endYear]);
+
+            const stats = useMemo(() => {
+                const totalVentas = filteredData.reduce((acc, d) => acc + d.ventas, 0);
+                const avgSocios = Math.round(filteredData.reduce((acc, d) => acc + d.socios, 0) / filteredData.length);
+                const maxVentas = Math.max(...filteredData.map(d => d.ventas));
+                const minVentas = Math.min(...filteredData.map(d => d.ventas));
+                return { totalVentas, avgSocios, maxVentas, minVentas };
+            }, [filteredData]);
+
+            return (
+                <div style={{ minHeight: '100vh', background: '#f5f5f5', padding: '20px' }}>
+                    {/* Header */}
+                    <div style={{ 
+                        background: 'linear-gradient(135deg, #2B8FAE 0%, #E87430 100%)', 
+                        color: 'white', 
+                        padding: '30px', 
+                        borderRadius: '8px', 
+                        marginBottom: '30px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                            <Logo />
+                            <h1 style={{ margin: 0, fontSize: '32px' }}>Dashboard Financiero</h1>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Splash Fit - Centro Deportivo</p>
+                    </div>
+
+                    {/* Filtros */}
+                    <div style={{ 
+                        background: 'white', 
+                        padding: '20px', 
+                        borderRadius: '8px', 
+                        marginBottom: '20px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    }}>
+                        <label style={{ marginRight: '20px' }}>
+                            Desde: <select value={startYear} onChange={(e) => setStartYear(parseInt(e.target.value))} 
+                                style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid #ddd' }}>
+                                {[2019, 2020, 2021, 2022, 2023, 2024, 2025].map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </label>
+                        <label>
+                            Hasta: <select value={endYear} onChange={(e) => setEndYear(parseInt(e.target.value))}
+                                style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid #ddd' }}>
+                                {[2019, 2020, 2021, 2022, 2023, 2024, 2025].map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </label>
+                    </div>
+
+                    {/* KPIs */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                        {[
+                            { label: 'Ventas Totales', value: `$${(stats.totalVentas / 1000000).toFixed(1)}M` },
+                            { label: 'Socios Promedio', value: stats.avgSocios },
+                            { label: 'Ventas Max', value: `$${(stats.maxVentas / 1000000).toFixed(1)}M` },
+                            { label: 'Ventas Min', value: `$${(stats.minVentas / 1000000).toFixed(1)}M` },
+                        ].map((kpi, idx) => (
+                            <div key={idx} style={{
+                                background: 'white',
+                                padding: '20px',
+                                borderRadius: '8px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                borderLeft: '4px solid #2B8FAE'
+                            }}>
+                                <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>{kpi.label}</div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2B8FAE' }}>{kpi.value}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Tabs */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '10px',
+                        marginBottom: '20px',
+                        borderBottom: '2px solid #ddd',
+                        paddingBottom: '10px'
+                    }}>
+                        {['Ventas', 'Socios', 'Tarifa'].map((tab, idx) => (
+                            <button 
+                                key={idx}
+                                onClick={() => setActiveTab(idx)}
+                                style={{
+                                    padding: '10px 20px',
+                                    border: 'none',
+                                    background: activeTab === idx ? '#2B8FAE' : 'transparent',
+                                    color: activeTab === idx ? 'white' : '#666',
+                                    cursor: 'pointer',
+                                    borderRadius: '4px 4px 0 0',
+                                    fontWeight: activeTab === idx ? 'bold' : 'normal'
+                                }}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Charts */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '20px' }}>
+                        {/* Line Chart */}
+                        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <h3 style={{ marginBottom: '15px', color: '#333' }}>Evolución de {['Ventas', 'Socios', 'Tarifa'][activeTab]}</h3>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={filteredData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="ym" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 12 }} />
+                                    <YAxis tick={{ fontSize: 12 }} />
+                                    <Tooltip formatter={(value) => value.toLocaleString()} />
+                                    <Legend />
+                                    {activeTab === 0 && <Line type="monotone" dataKey="ventas" stroke="#2B8FAE" dot={false} />}
+                                    {activeTab === 1 && <Line type="monotone" dataKey="socios" stroke="#E87430" dot={false} />}
+                                    {activeTab === 2 && <Line type="monotone" dataKey="tarifa" stroke="#16a34a" dot={false} />}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        {/* Bar Chart */}
+                        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <h3 style={{ marginBottom: '15px', color: '#333' }}>Comparativa Mensual</h3>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={filteredData.slice(-12)}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="ym" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 12 }} />
+                                    <YAxis tick={{ fontSize: 12 }} />
+                                    <Tooltip formatter={(value) => value.toLocaleString()} />
+                                    {activeTab === 0 && <Bar dataKey="ventas" fill="#2B8FAE" />}
+                                    {activeTab === 1 && <Bar dataKey="socios" fill="#E87430" />}
+                                    {activeTab === 2 && <Bar dataKey="tarifa" fill="#16a34a" />}
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{ textAlign: 'center', marginTop: '40px', color: '#888', fontSize: '12px' }}>
+                        <p>Dashboard Financiero Splash Fit © {new Date().getFullYear()}</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Renderizar
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Dashboard />);
+    </script>
+</body>
+</html>
