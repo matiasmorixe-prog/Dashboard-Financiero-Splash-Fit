@@ -133,7 +133,7 @@
         ];
 
         // ── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
-        export default function Dashboard() {
+        function Dashboard() {
             const [activeTab, setActiveTab] = useState(0);
             const [filteredData, setFilteredData] = useState(CASH_FLOW_DATA);
             const [startYear, setStartYear] = useState(2019);
